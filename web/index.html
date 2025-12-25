@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FotoBoo - Photo Booth</title>
+    <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Welcome Screen -->
+        <div id="welcome-screen" class="screen active">
+            <h1>FotoBoo</h1>
+            <p>Your Photo Booth Experience</p>
+            <button id="start-capture" class="btn btn-primary">Start Photo Session</button>
+        </div>
+
+        <!-- Capture Screen -->
+        <div id="capture-screen" class="screen">
+            <div class="camera-container">
+                <video id="camera" autoplay playsinline></video>
+                <canvas id="photo-canvas" style="display: none;"></canvas>
+                <div id="frame-overlay"></div>
+                <div id="countdown" class="countdown"></div>
+                <div id="flash" class="flash"></div>
+            </div>
+            
+            <div class="controls">
+                <button id="capture-btn" class="btn btn-capture">📸 Capture</button>
+                <button id="back-btn" class="btn btn-secondary">Back</button>
+            </div>
+        </div>
+
+        <!-- Preview Screen -->
+        <div id="preview-screen" class="screen">
+            <div class="preview-container">
+                <canvas id="preview-canvas"></canvas>
+                <div id="preview-frame"></div>
+            </div>
+            
+            <div class="filter-controls">
+                <h3>Filters</h3>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="none">None</button>
+                    <button class="filter-btn" data-filter="grayscale">Grayscale</button>
+                    <button class="filter-btn" data-filter="vintage">Vintage</button>
+                    <button class="filter-btn" data-filter="brightness">Bright</button>
+                    <button class="filter-btn" data-filter="contrast">Contrast</button>
+                </div>
+                
+                <div class="slider-controls">
+                    <label>Brightness: <span id="brightness-value">100</span>%</label>
+                    <input type="range" id="brightness-slider" min="50" max="150" value="100">
+                    
+                    <label>Contrast: <span id="contrast-value">100</span>%</label>
+                    <input type="range" id="contrast-slider" min="50" max="150" value="100">
+                </div>
+            </div>
+            
+            <div class="frame-controls">
+                <h3>Frames</h3>
+                <div class="frame-buttons">
+                    <button class="frame-btn active" data-frame="none">None</button>
+                    <button class="frame-btn" data-frame="simple">Simple</button>
+                    <button class="frame-btn" data-frame="event">Event</button>
+                    <button class="frame-btn" data-frame="party">Party</button>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <button id="retake-btn" class="btn btn-secondary">🔄 Retake</button>
+                <button id="save-btn" class="btn btn-primary">💾 Save Photo</button>
+            </div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="screen">
+            <div class="result-container">
+                <img id="final-photo" alt="Final photo">
+                <div id="qr-code"></div>
+            </div>
+            
+            <div class="controls">
+                <button id="download-btn" class="btn btn-primary">📥 Download</button>
+                <button id="new-photo-btn" class="btn btn-secondary">📸 New Photo</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="static/js/app.js"></script>
+</body>
+</html>

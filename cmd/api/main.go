@@ -44,6 +44,10 @@ func main() {
 		w.Write([]byte(`{"status":"ok"}`))
 	})
 
+	// Serve static files from web directory
+	webDir := getEnv("WEB_DIR", "./web")
+	mux.Handle("/", http.FileServer(http.Dir(webDir)))
+
 	log.Printf("FotoBoo API server starting on port %s", port)
 	log.Printf("Storage path: %s", storagePath)
 
