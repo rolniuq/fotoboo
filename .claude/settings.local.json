@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p /Users/quynh.vo/Workplace/fotoboo/cmd/api /Users/quynh.vo/Workplace/fotoboo/internal/domain /Users/quynh.vo/Workplace/fotoboo/internal/usecase /Users/quynh.vo/Workplace/fotoboo/internal/handler /Users/quynh.vo/Workplace/fotoboo/internal/repository /Users/quynh.vo/Workplace/fotoboo/pkg /Users/quynh.vo/Workplace/fotoboo/data/photos)",
+      "Bash(go mod init github.com/fotoboo/fotoboo)",
+      "Bash(go get github.com/google/uuid)",
+      "Bash(go mod tidy)",
+      "Bash(go build -o bin/fotoboo-api ./cmd/api)"
+    ]
+  }
+}
