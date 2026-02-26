@@ -11,6 +11,8 @@ services:
       - key: WEB_DIR
         value: /app/web
       - key: STORAGE_PATH
-        value: /tmp/fotoboo/photos
+        value: /tmp/photos
       - key: DB_PATH
-        value: /tmp/fotoboo/fotoboo.db
+        value: /tmp/fotoboo.db
+      - key: USE_MINIO
+        value: "false"
