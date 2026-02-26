@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -28,6 +29,18 @@ func main() {
 	webDir := getEnv("WEB_DIR", "./web")
 	baseURL := getEnv("BASE_URL", "http://localhost:"+port)
 
+	if err := ensureDataPaths(storagePath, dbPath); err != nil {
+		log.Fatalf("Failed to prepare data paths: %v", err)
+	}
+
+	// MinIO configuration
+	useMinIO := getEnv("USE_MINIO", "false") == "true"
+	minioEndpoint := getEnv("MINIO_ENDPOINT", "localhost:9000")
+	minioAccessKey := getEnv("MINIO_ACCESS_KEY", "minioadmin")
+	minioSecretKey := getEnv("MINIO_SECRET_KEY", "minioadmin")
+	minioBucket := getEnv("MINIO_BUCKET", "fotoboo")
+	minioUseSSL := getEnv("MINIO_USE_SSL", "false") == "true"
+
 	// Structured logger
 	logger := middleware.NewStructuredLogger()
 
@@ -41,8 +54,20 @@ func main() {
 	// Config store
 	configStore := domain.NewConfigStore()
 
-	// Repositories
-	photoRepo := repository.NewSQLitePhotoRepository(db, storagePath)
+	// Repositories - choose between local storage or MinIO
+	var photoRepo domain.PhotoRepository
+	if useMinIO {
+		minioConfig := domain.NewMinioConfig(minioEndpoint, minioAccessKey, minioSecretKey, minioBucket, minioUseSSL)
+		photoRepo, err = repository.NewMinioPhotoRepository(db, minioConfig)
+		if err != nil {
+			log.Fatalf("Failed to initialize MinIO photo repository: %v", err)
+		}
+		logger.Info("Using MinIO for photo storage", "endpoint", minioEndpoint, "bucket", minioBucket)
+	} else {
+		photoRepo = repository.NewSQLitePhotoRepository(db, storagePath)
+		logger.Info("Using local file storage for photos", "path", storagePath)
+	}
+
 	sessionRepo := repository.NewSQLiteSessionRepository(db)
 	deviceRepo := repository.NewSQLiteDeviceRepository(db)
 
@@ -231,12 +256,24 @@ func main() {
 	chain = metrics.Middleware(chain)
 	chain = rateLimiter.Middleware(chain)
 
-	logger.Info("FotoBoo API server starting",
-		"port", port,
-		"storage_path", storagePath,
-		"db_path", dbPath,
-		"web_dir", webDir,
-	)
+	if useMinIO {
+		logger.Info("FotoBoo API server starting",
+			"port", port,
+			"db_path", dbPath,
+			"web_dir", webDir,
+			"storage_type", "minio",
+			"minio_endpoint", minioEndpoint,
+			"minio_bucket", minioBucket,
+		)
+	} else {
+		logger.Info("FotoBoo API server starting",
+			"port", port,
+			"db_path", dbPath,
+			"web_dir", webDir,
+			"storage_type", "local",
+			"storage_path", storagePath,
+		)
+	}
 
 	// Graceful shutdown
 	go func() {
@@ -265,6 +302,19 @@ func enableCORS(w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+}
+
+func ensureDataPaths(storagePath, dbPath string) error {
+	if err := os.MkdirAll(storagePath, 0755); err != nil {
+		return err
+	}
+
+	dbDir := filepath.Dir(dbPath)
+	if dbDir == "." || dbDir == "" {
+		return nil
+	}
+
+	return os.MkdirAll(dbDir, 0755)
 }
 
 // spaHandler serves static files and falls back to index.html for SPA routes

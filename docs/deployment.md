@@ -103,13 +103,42 @@ docker run -d \
 
 ### Environment Variables
 
+#### Core Configuration
+
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
 | `PORT` | HTTP server listen port | `8080` | No |
-| `STORAGE_PATH` | Directory for photo files and metadata | `./data/photos` | No |
+| `DB_PATH` | SQLite database path | `./data/fotoboo.db` | No |
 | `WEB_DIR` | Directory containing frontend files | `./web` | No |
+| `BASE_URL` | Base URL for QR codes and links | `http://localhost:8080` | No |
+
+#### Storage Configuration
+
+FotoBoo supports two storage backends: **local file system** and **MinIO/S3**.
+
+##### Local Storage (Default)
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `STORAGE_PATH` | Directory for photo files | `./data/photos` | No |
+| `USE_MINIO` | Set to `false` for local storage | `false` | No |
+
+##### MinIO/S3 Storage
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `USE_MINIO` | Enable MinIO storage | `false` | Yes (for MinIO) |
+| `MINIO_ENDPOINT` | MinIO server endpoint | `localhost:9000` | Yes (for MinIO) |
+| `MINIO_ACCESS_KEY` | MinIO access key | `minioadmin` | Yes (for MinIO) |
+| `MINIO_SECRET_KEY` | MinIO secret key | `minioadmin` | Yes (for MinIO) |
+| `MINIO_BUCKET` | Bucket name for photos | `fotoboo` | Yes (for MinIO) |
+| `MINIO_USE_SSL` | Use HTTPS for MinIO | `false` | No |
+
+See [MinIO Setup Guide](./minio-setup.md) for detailed configuration instructions.
 
 ### Storage Requirements
+
+#### Local File System
 
 Estimate storage based on expected usage:
 
@@ -119,7 +148,14 @@ Estimate storage based on expected usage:
 | 500 | ~500 KB | ~250 MB | ~7.5 GB |
 | 1,000 | ~500 KB | ~500 MB | ~15 GB |
 
-The `metadata.json` file grows linearly with photo count but remains small (< 1 MB for thousands of photos).
+#### MinIO/S3
+
+When using MinIO or S3:
+- Photos are stored as objects in the cloud bucket
+- No local disk space needed for photos (only database)
+- Consider S3 storage costs: ~$0.023/GB/month for standard storage
+- Use MinIO for self-hosted object storage with unlimited capacity
+- See [MinIO Setup Guide](./minio-setup.md) for deployment options
 
 ---
 
@@ -208,17 +244,31 @@ Expected: 200 OK, body contains {"status":"ok"}
 
 ### What to Back Up
 
+#### Local Storage
+
 | Data | Location | Priority |
 |------|----------|----------|
 | Photo files | `$STORAGE_PATH/*.jpg` | **High** — irreplaceable |
-| Metadata index | `$STORAGE_PATH/metadata.json` | **High** — maps IDs to files |
+| Database | `$DB_PATH` (fotoboo.db) | **High** — metadata and relationships |
+| Configuration | Environment variables | **Low** — easily recreated |
+
+#### MinIO/S3 Storage
+
+| Data | Location | Priority |
+|------|----------|----------|
+| Photo objects | MinIO bucket or S3 | **High** — use MinIO mirroring or S3 versioning |
+| Database | `$DB_PATH` (fotoboo.db) | **High** — metadata and relationships |
 | Configuration | Environment variables | **Low** — easily recreated |
 
 ### Backup Commands
 
+#### Local Storage
+
 ```bash
 # Full backup
-tar -czf fotoboo-backup-$(date +%Y%m%d).tar.gz /var/data/fotoboo/photos/
+tar -czf fotoboo-backup-$(date +%Y%m%d).tar.gz \
+  /var/data/fotoboo/photos/ \
+  /var/data/fotoboo/fotoboo.db
 
 # Incremental backup (files modified in last 24h)
 find /var/data/fotoboo/photos/ -mtime -1 -type f | \
@@ -228,7 +278,23 @@ find /var/data/fotoboo/photos/ -mtime -1 -type f | \
 tar -xzf fotoboo-backup-20250115.tar.gz -C /
 ```
 
-> **Note:** The application rebuilds its in-memory index from `metadata.json` on startup, so restoring files + metadata is sufficient.
+#### MinIO Storage
+
+```bash
+# Backup MinIO bucket
+mc mirror myminio/fotoboo ./backup/fotoboo
+
+# Backup database
+cp /var/data/fotoboo/fotoboo.db ./backup/
+
+# Restore MinIO bucket
+mc mirror ./backup/fotoboo myminio/fotoboo
+
+# Restore database
+cp ./backup/fotoboo.db /var/data/fotoboo/
+```
+
+See [MinIO Setup Guide](./minio-setup.md) for detailed backup instructions.
 
 ---
 

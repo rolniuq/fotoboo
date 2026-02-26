@@ -6,9 +6,14 @@ A photo booth API service built with Go using Clean Architecture principles. Fot
 
 - Photo upload via REST API
 - Photo retrieval by ID
-- Local filesystem storage with metadata persistence
+- **Dual storage backends:** Local filesystem or MinIO/S3 object storage
+- Sessions and device management
+- QR code generation for photo sharing
+- Print integration support
+- Admin dashboard with statistics
 - CORS support for browser-based clients
 - Health check endpoint
+- SQLite database for metadata persistence
 
 ## Project Structure
 
@@ -53,7 +58,11 @@ Environment variables:
 | Variable       | Description                | Default          |
 |----------------|----------------------------|------------------|
 | `PORT`         | Server port                | `8080`           |
-| `STORAGE_PATH` | Photo storage directory    | `./data/photos`  |
+| `DB_PATH`      | SQLite database path       | `./data/fotoboo.db` |
+| `STORAGE_PATH` | Photo storage directory (local mode) | `./data/photos` |
+| `USE_MINIO`    | Enable MinIO/S3 storage    | `false`          |
+
+**For MinIO/S3 storage**, see [MinIO Setup Guide](./docs/minio-setup.md) for additional configuration options.
 
 ## API Endpoints
 

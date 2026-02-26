@@ -9,6 +9,7 @@ This guide walks you through setting up and running FotoBoo locally.
 - **Go 1.21+** (project uses Go 1.25.3)
 - A modern web browser with webcam access (Chrome, Firefox, Edge, Safari)
 - (Optional) A webcam or built-in camera for photo capture
+- (Optional) Docker for running MinIO (if using object storage)
 
 ---
 
@@ -65,15 +66,40 @@ Run the compiled binary:
 
 ## Configuration
 
-FotoBoo is configured via environment variables:
+FotoBoo is configured via environment variables.
+
+### Basic Configuration
 
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `PORT` | HTTP server port | `8080` |
-| `STORAGE_PATH` | Directory for photo storage | `./data/photos` |
+| `DB_PATH` | SQLite database path | `./data/fotoboo.db` |
 | `WEB_DIR` | Directory for frontend files | `./web` |
 
+### Storage Options
+
+#### Option 1: Local File Storage (Default)
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `STORAGE_PATH` | Directory for photo storage | `./data/photos` |
+
+#### Option 2: MinIO/S3 Object Storage
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `USE_MINIO` | Enable MinIO storage | `false` |
+| `MINIO_ENDPOINT` | MinIO server endpoint | `localhost:9000` |
+| `MINIO_ACCESS_KEY` | MinIO access key | `minioadmin` |
+| `MINIO_SECRET_KEY` | MinIO secret key | `minioadmin` |
+| `MINIO_BUCKET` | Bucket name | `fotoboo` |
+| `MINIO_USE_SSL` | Use HTTPS | `false` |
+
+For detailed MinIO setup, see [MinIO Setup Guide](./minio-setup.md).
+
 ### Examples
+
+#### Local Storage
 
 ```bash
 # Run on a custom port
@@ -84,6 +110,21 @@ STORAGE_PATH=/tmp/fotoboo-photos go run ./cmd/api
 
 # Combine multiple settings
 PORT=3000 STORAGE_PATH=/mnt/data/photos go run ./cmd/api
+```
+
+#### MinIO Storage
+
+```bash
+# Start MinIO server (Docker)
+docker-compose -f docker-compose.minio.yml up -d
+
+# Run FotoBoo with MinIO
+USE_MINIO=true \
+MINIO_ENDPOINT=localhost:9000 \
+MINIO_ACCESS_KEY=minioadmin \
+MINIO_SECRET_KEY=minioadmin \
+MINIO_BUCKET=fotoboo \
+go run ./cmd/api
 ```
 
 ---
