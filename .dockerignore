@@ -1,0 +1,12 @@
+.git
+.gitignore
+.claude
+bin
+data
+node_modules
+web/node_modules
+web/dist
+*.log
+*.db
+*.db-shm
+*.db-wal

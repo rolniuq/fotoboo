@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: fotoboo
+    runtime: docker
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: WEB_DIR
+        value: /app/web
+      - key: STORAGE_PATH
+        value: /tmp/fotoboo/photos
+      - key: DB_PATH
+        value: /tmp/fotoboo/fotoboo.db

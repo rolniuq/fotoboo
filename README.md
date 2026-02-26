@@ -115,6 +115,31 @@ go run ./cmd/api
 go build -o bin/fotoboo-api ./cmd/api
 ```
 
+## Free Deployment (Render)
+
+This repo includes a zero-cost deployment path on Render using Docker.
+
+### Included files
+
+- `Dockerfile`
+- `.dockerignore`
+- `render.yaml`
+
+### Deploy steps
+
+1. Push your latest code to GitHub
+2. In Render, choose **New +** → **Blueprint**
+3. Select this repository and click **Apply**
+4. Wait for build + deploy, then open the generated URL
+
+Health check endpoint:
+
+```bash
+GET /health
+```
+
+> Note: Render free instances can sleep when idle, and `/tmp` storage is not persistent.
+
 ## License
 
 MIT

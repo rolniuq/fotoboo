@@ -6,6 +6,56 @@ How to deploy and configure FotoBoo for different environments.
 
 ## Deployment Options
 
+### Option 0: Render Free (No-Cost Cloud, Fastest)
+
+Use Render to deploy directly from GitHub with no server setup. This is the fastest free path for a live demo URL.
+
+#### What You Need
+
+- A Render account (free)
+- This repository on GitHub
+- `Dockerfile` and `render.yaml` in the project root
+
+#### One-Time GitHub Setup
+
+Push these files to your repository:
+
+- `Dockerfile`
+- `.dockerignore`
+- `render.yaml`
+
+#### Deploy Steps
+
+1. Open Render dashboard: https://dashboard.render.com
+2. Click **New +** → **Blueprint**
+3. Connect your GitHub repo
+4. Render detects `render.yaml` automatically
+5. Click **Apply** to create and deploy service
+
+Render creates one web service named `fotoboo` on the free plan with:
+
+- Docker runtime
+- Health check: `/health`
+- Automatic deploy on every push
+- Environment variables configured from `render.yaml`
+
+#### Important Free-Plan Notes
+
+- The service can spin down when idle and take time to wake up.
+- `/tmp` storage is ephemeral. Uploaded photos and SQLite data may reset on redeploy/restart.
+- This is ideal for demos and staging. For persistent storage, use Oracle Always Free VM or a paid persistent disk.
+
+#### Environment Variables Used on Render
+
+| Variable | Value |
+|----------|-------|
+| `PORT` | `8080` |
+| `WEB_DIR` | `/app/web` |
+| `STORAGE_PATH` | `/tmp/fotoboo/photos` |
+| `DB_PATH` | `/tmp/fotoboo/fotoboo.db` |
+
+---
+
 ### Option 1: Direct Binary (Simplest)
 
 Build and run the compiled Go binary directly on the host machine.
