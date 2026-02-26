@@ -3,9 +3,15 @@ package repository
 import (
 	"database/sql"
 	"fmt"
+	"os"
+	"path/filepath"
 )
 
 func InitDB(dbPath string) (*sql.DB, error) {
+	if err := ensureDBDir(dbPath); err != nil {
+		return nil, fmt.Errorf("failed to prepare database path: %w", err)
+	}
+
 	db, err := sql.Open("sqlite3", dbPath+"?_journal_mode=WAL&_busy_timeout=5000")
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
@@ -58,4 +64,13 @@ func createTables(db *sql.DB) error {
 	}
 
 	return nil
+}
+
+func ensureDBDir(dbPath string) error {
+	dir := filepath.Dir(dbPath)
+	if dir == "." || dir == "" {
+		return nil
+	}
+
+	return os.MkdirAll(dir, 0755)
 }
