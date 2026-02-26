@@ -167,6 +167,13 @@ If you need always-on hosting with persistent storage at zero monthly cost, depl
 
 Start here: [deploy/oracle/README.md](./deploy/oracle/README.md)
 
+Fast launch without DNS:
+
+```bash
+chmod +x deploy/oracle/deploy-nipio.sh
+./deploy/oracle/deploy-nipio.sh
+```
+
 ## License
 
 MIT

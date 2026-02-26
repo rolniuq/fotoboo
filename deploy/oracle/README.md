@@ -2,6 +2,8 @@
 
 Deploy FotoBoo on an Oracle Cloud Always Free VM with Docker Compose and automatic HTTPS (Caddy).
 
+For the fastest zero-DNS launch, you can use `deploy/oracle/deploy-nipio.sh` to deploy on `https://<VM_IP>.nip.io` automatically.
+
 ## Why this option
 
 - Always-on free VM (no sleep on idle)
@@ -63,6 +65,18 @@ Set at least:
 - `USE_MINIO=false` (recommended first)
 
 Keep `APP_BIND_ADDRESS=127.0.0.1` so only Caddy exposes public ports.
+
+### Fast path (no DNS setup)
+
+If you want to go live immediately without buying/configuring a domain:
+
+```bash
+cd ~/fotoboo
+chmod +x deploy/oracle/deploy-nipio.sh
+./deploy/oracle/deploy-nipio.sh
+```
+
+This uses `https://<public-ip>.nip.io` and writes the needed values into `.env`.
 
 ## 4) Point your domain to the VM
 

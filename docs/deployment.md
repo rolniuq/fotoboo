@@ -23,6 +23,7 @@ Use an Oracle Cloud Always Free VM for persistent, always-on hosting.
 - `.env.example` for production config
 - `deploy/oracle/Caddyfile` for automatic HTTPS
 - `deploy/oracle/oracle-first-boot.sh` for Docker setup
+- `deploy/oracle/deploy-nipio.sh` for instant HTTPS without DNS setup
 - `deploy/oracle/README.md` full step-by-step guide
 
 Quick start guide: see [Oracle Always Free Deployment](../deploy/oracle/README.md).
