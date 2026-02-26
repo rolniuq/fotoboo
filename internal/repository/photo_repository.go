@@ -1,67 +1,66 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
-	"os"
-	"path/filepath"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/fotoboo/fotoboo/internal/domain"
+	"github.com/fotoboo/fotoboo/pkg/storage"
 )
 
-type SQLitePhotoRepository struct {
-	db       *sql.DB
-	basePath string
+type PhotoRepository struct {
+	db      *sql.DB
+	storage storage.Storage
 }
 
-func NewSQLitePhotoRepository(db *sql.DB, basePath string) *SQLitePhotoRepository {
-	if err := os.MkdirAll(basePath, 0755); err != nil {
-		panic(fmt.Sprintf("failed to create storage directory: %v", err))
+func NewPhotoRepository(db *sql.DB, storage storage.Storage) *PhotoRepository {
+	return &PhotoRepository{
+		db:      db,
+		storage: storage,
 	}
-
-	repo := &SQLitePhotoRepository{
-		db:       db,
-		basePath: basePath,
-	}
-
-	return repo
 }
 
-func (r *SQLitePhotoRepository) Save(photo *domain.Photo, data []byte) error {
+func (r *PhotoRepository) Save(photo *domain.Photo, data []byte) error {
 	if len(data) == 0 {
 		return domain.ErrInvalidPhoto
 	}
 
-	filePath := filepath.Join(r.basePath, photo.ID+".jpg")
+	ctx := context.Background()
+	objectKey := fmt.Sprintf("photos/%s.jpg", photo.ID)
 
-	if err := os.WriteFile(filePath, data, 0644); err != nil {
-		return fmt.Errorf("failed to write photo file: %w", err)
+	// Save to storage backend
+	_, err := r.storage.Save(ctx, objectKey, data)
+	if err != nil {
+		return fmt.Errorf("failed to save photo to storage: %w", err)
 	}
 
-	photo.FilePath = filePath
+	// Store the object key (not the full path) for consistency across storage backends
+	photo.FilePath = objectKey
 
-	_, err := r.db.Exec(
+	// Save metadata to database
+	_, err = r.db.Exec(
 		`INSERT INTO photos (id, session_id, file_path, created_at) VALUES (?, ?, ?, ?)`,
 		photo.ID, photo.SessionID, photo.FilePath, photo.CreatedAt.UTC().Format(time.RFC3339Nano),
 	)
 	if err != nil {
-		// Clean up the file if DB insert fails
-		os.Remove(filePath)
+		// Clean up the stored file if DB insert fails
+		r.storage.Delete(ctx, objectKey)
 		return fmt.Errorf("failed to save photo metadata: %w", err)
 	}
 
 	return nil
 }
 
-func (r *SQLitePhotoRepository) FindByID(id string) (*domain.Photo, error) {
+func (r *PhotoRepository) FindByID(id string) (*domain.Photo, error) {
 	row := r.db.QueryRow(`SELECT id, session_id, file_path, created_at FROM photos WHERE id = ?`, id)
 	return r.scanPhoto(row)
 }
 
-func (r *SQLitePhotoRepository) FindBySessionID(sessionID string) ([]*domain.Photo, error) {
+func (r *PhotoRepository) FindBySessionID(sessionID string) ([]*domain.Photo, error) {
 	rows, err := r.db.Query(
 		`SELECT id, session_id, file_path, created_at FROM photos WHERE session_id = ? ORDER BY created_at ASC`,
 		sessionID,
@@ -74,15 +73,19 @@ func (r *SQLitePhotoRepository) FindBySessionID(sessionID string) ([]*domain.Pho
 	return r.scanPhotos(rows)
 }
 
-func (r *SQLitePhotoRepository) GetFileData(photo *domain.Photo) ([]byte, error) {
-	data, err := os.ReadFile(photo.FilePath)
+func (r *PhotoRepository) GetFileData(photo *domain.Photo) ([]byte, error) {
+	ctx := context.Background()
+
+	// Use the stored key directly (it's already just the object key)
+	data, err := r.storage.Get(ctx, photo.FilePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read photo file: %w", err)
+		return nil, fmt.Errorf("failed to get photo data: %w", err)
 	}
+
 	return data, nil
 }
 
-func (r *SQLitePhotoRepository) ListAll() ([]*domain.Photo, error) {
+func (r *PhotoRepository) ListAll() ([]*domain.Photo, error) {
 	rows, err := r.db.Query(`SELECT id, session_id, file_path, created_at FROM photos ORDER BY created_at DESC`)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list photos: %w", err)
@@ -92,15 +95,17 @@ func (r *SQLitePhotoRepository) ListAll() ([]*domain.Photo, error) {
 	return r.scanPhotos(rows)
 }
 
-func (r *SQLitePhotoRepository) Delete(id string) error {
+func (r *PhotoRepository) Delete(id string) error {
 	photo, err := r.FindByID(id)
 	if err != nil {
 		return err
 	}
 
-	// Delete the file
-	if err := os.Remove(photo.FilePath); err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("failed to delete photo file: %w", err)
+	ctx := context.Background()
+
+	// Delete from storage using the stored key
+	if err := r.storage.Delete(ctx, photo.FilePath); err != nil {
+		return fmt.Errorf("failed to delete photo from storage: %w", err)
 	}
 
 	// Delete from database
@@ -112,7 +117,7 @@ func (r *SQLitePhotoRepository) Delete(id string) error {
 	return nil
 }
 
-func (r *SQLitePhotoRepository) CountAll() (int, error) {
+func (r *PhotoRepository) CountAll() (int, error) {
 	var count int
 	err := r.db.QueryRow(`SELECT COUNT(*) FROM photos`).Scan(&count)
 	if err != nil {
@@ -121,7 +126,7 @@ func (r *SQLitePhotoRepository) CountAll() (int, error) {
 	return count, nil
 }
 
-func (r *SQLitePhotoRepository) CountByDate(date time.Time) (int, error) {
+func (r *PhotoRepository) CountByDate(date time.Time) (int, error) {
 	startOfDay := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.UTC).Format(time.RFC3339)
 	endOfDay := time.Date(date.Year(), date.Month(), date.Day(), 23, 59, 59, 999999999, time.UTC).Format(time.RFC3339)
 
@@ -133,30 +138,16 @@ func (r *SQLitePhotoRepository) CountByDate(date time.Time) (int, error) {
 	return count, nil
 }
 
-func (r *SQLitePhotoRepository) TotalStorageBytes() (int64, error) {
-	rows, err := r.db.Query(`SELECT file_path FROM photos`)
+func (r *PhotoRepository) TotalStorageBytes() (int64, error) {
+	ctx := context.Background()
+	totalSize, err := r.storage.TotalSize(ctx, "photos/")
 	if err != nil {
-		return 0, fmt.Errorf("failed to query photo paths: %w", err)
+		return 0, fmt.Errorf("failed to calculate total storage: %w", err)
 	}
-	defer rows.Close()
-
-	var totalSize int64
-	for rows.Next() {
-		var filePath string
-		if err := rows.Scan(&filePath); err != nil {
-			continue
-		}
-		info, err := os.Stat(filePath)
-		if err != nil {
-			continue
-		}
-		totalSize += info.Size()
-	}
-
 	return totalSize, nil
 }
 
-func (r *SQLitePhotoRepository) scanPhoto(row *sql.Row) (*domain.Photo, error) {
+func (r *PhotoRepository) scanPhoto(row *sql.Row) (*domain.Photo, error) {
 	var photo domain.Photo
 	var createdAt string
 
@@ -172,7 +163,7 @@ func (r *SQLitePhotoRepository) scanPhoto(row *sql.Row) (*domain.Photo, error) {
 	return &photo, nil
 }
 
-func (r *SQLitePhotoRepository) scanPhotos(rows *sql.Rows) ([]*domain.Photo, error) {
+func (r *PhotoRepository) scanPhotos(rows *sql.Rows) ([]*domain.Photo, error) {
 	var photos []*domain.Photo
 	for rows.Next() {
 		var photo domain.Photo

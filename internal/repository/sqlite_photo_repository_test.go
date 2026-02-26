@@ -15,15 +15,16 @@ import (
 
 	"github.com/fotoboo/fotoboo/internal/domain"
 	"github.com/fotoboo/fotoboo/internal/repository"
+	"github.com/fotoboo/fotoboo/pkg/storage"
 )
 
-// PhotoRepositoryTestSuite tests SQLitePhotoRepository
+// PhotoRepositoryTestSuite tests PhotoRepository with local storage
 type PhotoRepositoryTestSuite struct {
 	suite.Suite
 	db          *sql.DB
 	storagePath string
 	tempDir     string
-	repo        *repository.SQLitePhotoRepository
+	repo        *repository.PhotoRepository
 }
 
 func (s *PhotoRepositoryTestSuite) SetupTest() {
@@ -38,7 +39,10 @@ func (s *PhotoRepositoryTestSuite) SetupTest() {
 	require.NoError(s.T(), err)
 	s.db = db
 
-	s.repo = repository.NewSQLitePhotoRepository(db, s.storagePath)
+	localStorage, err := storage.NewLocalStorage(s.storagePath)
+	require.NoError(s.T(), err)
+
+	s.repo = repository.NewPhotoRepository(db, localStorage)
 }
 
 func (s *PhotoRepositoryTestSuite) TearDownTest() {
@@ -58,7 +62,12 @@ func (s *PhotoRepositoryTestSuite) TestSave_Success() {
 
 	require.NoError(s.T(), err)
 	assert.NotEmpty(s.T(), photo.FilePath)
-	assert.FileExists(s.T(), photo.FilePath)
+
+	// FilePath now stores the key, not full path
+	// Verify the file exists in storage by retrieving it
+	retrievedData, err := s.repo.GetFileData(photo)
+	require.NoError(s.T(), err)
+	assert.Equal(s.T(), data, retrievedData)
 }
 
 func (s *PhotoRepositoryTestSuite) TestSave_EmptyData() {

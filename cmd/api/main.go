@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -18,6 +17,7 @@ import (
 	"github.com/fotoboo/fotoboo/internal/middleware"
 	"github.com/fotoboo/fotoboo/internal/repository"
 	"github.com/fotoboo/fotoboo/internal/usecase"
+	"github.com/fotoboo/fotoboo/pkg/storage"
 )
 
 func main() {
@@ -28,10 +28,6 @@ func main() {
 	dbPath := getEnv("DB_PATH", "./data/fotoboo.db")
 	webDir := getEnv("WEB_DIR", "./web")
 	baseURL := getEnv("BASE_URL", "http://localhost:"+port)
-
-	if err := ensureDataPaths(storagePath, dbPath); err != nil {
-		log.Fatalf("Failed to prepare data paths: %v", err)
-	}
 
 	// MinIO configuration
 	useMinIO := getEnv("USE_MINIO", "false") == "true"
@@ -54,20 +50,35 @@ func main() {
 	// Config store
 	configStore := domain.NewConfigStore()
 
-	// Repositories - choose between local storage or MinIO
-	var photoRepo domain.PhotoRepository
+	// Initialize storage backend
+	var storageBackend storage.Storage
 	if useMinIO {
-		minioConfig := domain.NewMinioConfig(minioEndpoint, minioAccessKey, minioSecretKey, minioBucket, minioUseSSL)
-		photoRepo, err = repository.NewMinioPhotoRepository(db, minioConfig)
+		minioConfig := &storage.MinioConfig{
+			Endpoint:        minioEndpoint,
+			AccessKeyID:     minioAccessKey,
+			SecretAccessKey: minioSecretKey,
+			BucketName:      minioBucket,
+			UseSSL:          minioUseSSL,
+			Region:          "us-east-1",
+		}
+		var err error
+		storageBackend, err = storage.NewMinioStorage(minioConfig)
 		if err != nil {
-			log.Fatalf("Failed to initialize MinIO photo repository: %v", err)
+			log.Fatalf("Failed to initialize MinIO storage: %v", err)
 		}
 		logger.Info("Using MinIO for photo storage", "endpoint", minioEndpoint, "bucket", minioBucket)
 	} else {
-		photoRepo = repository.NewSQLitePhotoRepository(db, storagePath)
+		var err error
+		storageBackend, err = storage.NewLocalStorage(storagePath)
+		if err != nil {
+			log.Fatalf("Failed to initialize local storage: %v", err)
+		}
 		logger.Info("Using local file storage for photos", "path", storagePath)
 	}
+	defer storageBackend.Close()
 
+	// Repositories
+	photoRepo := repository.NewPhotoRepository(db, storageBackend)
 	sessionRepo := repository.NewSQLiteSessionRepository(db)
 	deviceRepo := repository.NewSQLiteDeviceRepository(db)
 
@@ -302,19 +313,6 @@ func enableCORS(w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-}
-
-func ensureDataPaths(storagePath, dbPath string) error {
-	if err := os.MkdirAll(storagePath, 0755); err != nil {
-		return err
-	}
-
-	dbDir := filepath.Dir(dbPath)
-	if dbDir == "." || dbDir == "" {
-		return nil
-	}
-
-	return os.MkdirAll(dbDir, 0755)
 }
 
 // spaHandler serves static files and falls back to index.html for SPA routes
