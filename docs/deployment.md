@@ -6,6 +6,27 @@ How to deploy and configure FotoBoo for different environments.
 
 ## Deployment Options
 
+### Option -1: Oracle Always Free VM (No-Cost Production)
+
+Use an Oracle Cloud Always Free VM for persistent, always-on hosting.
+
+#### Why choose this
+
+- No monthly hosting cost
+- No idle sleep behavior
+- Persistent storage for SQLite + photos
+- Full control of networking and SSL
+
+#### Included in this repository
+
+- `docker-compose.yml` with `prod` profile (`app` + `caddy`)
+- `.env.example` for production config
+- `deploy/oracle/Caddyfile` for automatic HTTPS
+- `deploy/oracle/oracle-first-boot.sh` for Docker setup
+- `deploy/oracle/README.md` full step-by-step guide
+
+Quick start guide: see [Oracle Always Free Deployment](../deploy/oracle/README.md).
+
 ### Option 0: Render Free (No-Cost Cloud, Fastest)
 
 Use Render to deploy directly from GitHub with no server setup. This is the fastest free path for a live demo URL.
@@ -112,7 +133,7 @@ sudo journalctl -u fotoboo -f
 
 ### Option 3: Docker (Recommended for Production)
 
-> **Note:** Dockerfile is not yet included in the repository. Below is a recommended configuration.
+> **Note:** This repository already includes a production-ready `Dockerfile`.
 
 ```dockerfile
 # Dockerfile

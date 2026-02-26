@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     container_name: fotoboo-api
     ports:
-      - "${PORT:-8080}:${PORT:-8080}"
+      - "${APP_BIND_ADDRESS:-127.0.0.1}:${PORT:-8080}:${PORT:-8080}"
     environment:
       PORT: ${PORT:-8080}
       WEB_DIR: /app/web
@@ -22,6 +22,25 @@ services:
       MINIO_USE_SSL: ${MINIO_USE_SSL:-false}
     volumes:
       - fotoboo_data:/app/data
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2.10-alpine
+    container_name: fotoboo-caddy
+    profiles:
+      - prod
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL:-ops@example.com}
+    volumes:
+      - ./deploy/oracle/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
     restart: unless-stopped
 
   minio:
@@ -49,3 +68,5 @@ services:
 volumes:
   fotoboo_data:
   minio_data:
+  caddy_data:
+  caddy_config:

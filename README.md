@@ -157,6 +157,16 @@ GET /health
 
 > Note: Render free instances can sleep when idle, and `/tmp` storage is not persistent.
 
+## Free Production Hosting (Oracle Always Free)
+
+If you need always-on hosting with persistent storage at zero monthly cost, deploy on Oracle Cloud Always Free VM.
+
+- Uses existing `docker-compose.yml` with `prod` profile (`app` + `caddy`)
+- Automatic HTTPS via Caddy + Let's Encrypt
+- Persists SQLite DB and photo data in Docker volume
+
+Start here: [deploy/oracle/README.md](./deploy/oracle/README.md)
+
 ## License
 
 MIT
