@@ -6,24 +6,21 @@ This guide explains how to configure FotoBoo to use MinIO for photo storage inst
 
 1. Start MinIO server:
 ```bash
-docker-compose -f docker-compose.minio.yml up -d
+USE_MINIO=true docker compose --profile minio up -d
 ```
 
 2. Access MinIO Console at http://localhost:9001
    - Username: `minioadmin`
    - Password: `minioadmin`
 
-3. Run FotoBoo with MinIO:
+3. FotoBoo runs in the same compose stack with MinIO enabled:
 ```bash
-export USE_MINIO=true
-export MINIO_ENDPOINT=localhost:9000
-export MINIO_ACCESS_KEY=minioadmin
-export MINIO_SECRET_KEY=minioadmin
-export MINIO_BUCKET=fotoboo
-export MINIO_USE_SSL=false
-
-./bin/fotoboo-api
+docker compose ps
 ```
+
+4. Access URLs:
+   - FotoBoo: http://localhost:8080
+   - MinIO Console: http://localhost:9001
 
 ## Environment Variables
 

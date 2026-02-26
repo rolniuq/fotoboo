@@ -115,6 +115,23 @@ go run ./cmd/api
 go build -o bin/fotoboo-api ./cmd/api
 ```
 
+## Docker Compose
+
+Use a single compose file for all local services.
+
+```bash
+# Local storage mode (app only)
+docker compose up -d --build
+
+# MinIO mode (app + MinIO)
+USE_MINIO=true docker compose --profile minio up -d --build
+```
+
+Endpoints:
+
+- App: `http://localhost:8080`
+- MinIO Console: `http://localhost:9001` (when `minio` profile is enabled)
+
 ## Free Deployment (Render)
 
 This repo includes a zero-cost deployment path on Render using Docker.

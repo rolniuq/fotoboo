@@ -115,16 +115,14 @@ PORT=3000 STORAGE_PATH=/mnt/data/photos go run ./cmd/api
 #### MinIO Storage
 
 ```bash
-# Start MinIO server (Docker)
-docker-compose -f docker-compose.minio.yml up -d
+# Start app + MinIO with a single compose file
+USE_MINIO=true docker compose --profile minio up -d
 
-# Run FotoBoo with MinIO
-USE_MINIO=true \
-MINIO_ENDPOINT=localhost:9000 \
-MINIO_ACCESS_KEY=minioadmin \
-MINIO_SECRET_KEY=minioadmin \
-MINIO_BUCKET=fotoboo \
-go run ./cmd/api
+# Open app
+# http://localhost:8080
+
+# Open MinIO console
+# http://localhost:9001
 ```
 
 ---
