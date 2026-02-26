@@ -49,7 +49,7 @@ Render creates one web service named `fotoboo` on the free plan with:
 
 | Variable | Value |
 |----------|-------|
-| `PORT` | `8080` |
+| `PORT` | `10000` |
 | `WEB_DIR` | `/app/web` |
 | `STORAGE_PATH` | `/tmp/fotoboo/photos` |
 | `DB_PATH` | `/tmp/fotoboo/fotoboo.db` |
