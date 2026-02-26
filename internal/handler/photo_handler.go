@@ -23,6 +23,7 @@ func NewPhotoHandler(useCase *usecase.PhotoUseCase) *PhotoHandler {
 
 type UploadResponse struct {
 	ID        string `json:"id"`
+	SessionID string `json:"session_id,omitempty"`
 	CreatedAt string `json:"created_at"`
 }
 
@@ -44,7 +45,10 @@ func (h *PhotoHandler) UploadPhoto(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	photo, err := h.useCase.UploadPhoto(data)
+	// Get optional session_id from query param
+	sessionID := r.URL.Query().Get("session_id")
+
+	photo, err := h.useCase.UploadPhoto(sessionID, data)
 	if err != nil {
 		if errors.Is(err, domain.ErrInvalidPhoto) {
 			h.writeError(w, http.StatusBadRequest, "invalid photo data")
@@ -56,6 +60,7 @@ func (h *PhotoHandler) UploadPhoto(w http.ResponseWriter, r *http.Request) {
 
 	response := UploadResponse{
 		ID:        photo.ID,
+		SessionID: photo.SessionID,
 		CreatedAt: photo.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 	}
 
@@ -70,9 +75,19 @@ func (h *PhotoHandler) GetPhoto(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id := strings.TrimPrefix(r.URL.Path, "/photos/")
+	// Parse path: /photos/{id} or /photos/{id}/qr
+	path := strings.TrimPrefix(r.URL.Path, "/photos/")
+	parts := strings.SplitN(path, "/", 2)
+	id := parts[0]
+
 	if id == "" {
 		h.writeError(w, http.StatusBadRequest, "photo id is required")
+		return
+	}
+
+	// Check for sub-resources
+	if len(parts) > 1 && parts[1] == "qr" {
+		h.GetPhotoQR(w, r, id)
 		return
 	}
 
@@ -90,6 +105,47 @@ func (h *PhotoHandler) GetPhoto(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", "inline; filename=\""+photo.ID+".jpg\"")
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
+}
+
+func (h *PhotoHandler) ListPhotos(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		h.writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	photos, err := h.useCase.ListPhotos()
+	if err != nil {
+		h.writeError(w, http.StatusInternalServerError, "failed to list photos")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(photos)
+}
+
+func (h *PhotoHandler) DeletePhoto(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		h.writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	id := strings.TrimPrefix(r.URL.Path, "/photos/")
+	if id == "" {
+		h.writeError(w, http.StatusBadRequest, "photo id is required")
+		return
+	}
+
+	err := h.useCase.DeletePhoto(id)
+	if err != nil {
+		if errors.Is(err, domain.ErrPhotoNotFound) {
+			h.writeError(w, http.StatusNotFound, "photo not found")
+			return
+		}
+		h.writeError(w, http.StatusInternalServerError, "failed to delete photo")
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *PhotoHandler) writeError(w http.ResponseWriter, status int, message string) {
