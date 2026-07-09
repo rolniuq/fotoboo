@@ -27,8 +27,6 @@ func main() {
 	port := getEnv("PORT", "8080")
 	dbPath := getEnv("DB_PATH", "./data/fotoboo.db")
 	webDir := getEnv("WEB_DIR", "./web")
-	baseURL := getEnv("BASE_URL", "http://localhost:"+port)
-
 	// MinIO configuration
 	useMinIO := getEnv("USE_MINIO", "false") == "true"
 	minioEndpoint := getEnv("MINIO_ENDPOINT", "localhost:9000")
@@ -51,8 +49,12 @@ func main() {
 	configStore := domain.NewConfigStore()
 
 	// Initialize storage backend
-	var storageBackend storage.Storage
+	var (
+		storageBackend storage.Storage
+		storageType    string
+	)
 	if useMinIO {
+		storageType = "minio"
 		minioConfig := &storage.MinioConfig{
 			Endpoint:        minioEndpoint,
 			AccessKeyID:     minioAccessKey,
@@ -66,14 +68,13 @@ func main() {
 		if err != nil {
 			log.Fatalf("Failed to initialize MinIO storage: %v", err)
 		}
-		logger.Info("Using MinIO for photo storage", "endpoint", minioEndpoint, "bucket", minioBucket)
 	} else {
+		storageType = "local"
 		var err error
 		storageBackend, err = storage.NewLocalStorage(storagePath)
 		if err != nil {
 			log.Fatalf("Failed to initialize local storage: %v", err)
 		}
-		logger.Info("Using local file storage for photos", "path", storagePath)
 	}
 	defer storageBackend.Close()
 
@@ -94,7 +95,6 @@ func main() {
 	deviceHandler := handler.NewDeviceHandler(deviceUseCase)
 	printHandler := handler.NewPrintHandler(photoUseCase)
 	adminHandler := handler.NewAdminHandler(adminUseCase)
-	_ = handler.NewQRHandler(photoUseCase, baseURL)
 
 	// Middleware
 	metrics := middleware.NewMetrics()
@@ -102,35 +102,24 @@ func main() {
 	sessionLimiter := middleware.NewSessionLimiter(50)         // max 50 concurrent sessions
 
 	// Background jobs
-	jobRunner := background.NewJobRunner(photoRepo, storagePath)
+	jobRunner := background.NewJobRunner(photoRepo)
 	jobRunner.Start()
 
 	mux := http.NewServeMux()
 
 	// Photo endpoints
-	mux.HandleFunc("/photos", func(w http.ResponseWriter, r *http.Request) {
-		enableCORS(w)
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
+	mux.HandleFunc("/photos", middleware.WithCORS(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodPost:
 			photoHandler.UploadPhoto(w, r)
 		case http.MethodGet:
 			photoHandler.ListPhotos(w, r)
 		default:
-			w.WriteHeader(http.StatusMethodNotAllowed)
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		}
-	})
+	}))
 
-	mux.HandleFunc("/photos/", func(w http.ResponseWriter, r *http.Request) {
-		enableCORS(w)
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-
+	mux.HandleFunc("/photos/", middleware.WithCORS(func(w http.ResponseWriter, r *http.Request) {
 		path := strings.TrimPrefix(r.URL.Path, "/photos/")
 		parts := strings.SplitN(path, "/", 2)
 		id := parts[0]
@@ -146,16 +135,10 @@ func main() {
 		}
 
 		photoHandler.GetPhoto(w, r)
-	})
+	}))
 
 	// Session endpoints
-	mux.HandleFunc("/sessions", func(w http.ResponseWriter, r *http.Request) {
-		enableCORS(w)
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-
+	mux.HandleFunc("/sessions", middleware.WithCORS(func(w http.ResponseWriter, r *http.Request) {
 		// Session limiting on POST (creating new sessions)
 		if r.Method == http.MethodPost {
 			if !sessionLimiter.Acquire() {
@@ -164,19 +147,12 @@ func main() {
 				w.Write([]byte(`{"error":"maximum concurrent sessions reached"}`))
 				return
 			}
-			// Note: Release is called when session completes
 		}
 
 		sessionHandler.HandleSessions(w, r)
-	})
+	}))
 
-	mux.HandleFunc("/sessions/", func(w http.ResponseWriter, r *http.Request) {
-		enableCORS(w)
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-
+	mux.HandleFunc("/sessions/", middleware.WithCORS(func(w http.ResponseWriter, r *http.Request) {
 		// Release session slot when completing
 		path := strings.TrimPrefix(r.URL.Path, "/sessions/")
 		parts := strings.SplitN(path, "/", 2)
@@ -185,69 +161,23 @@ func main() {
 		}
 
 		sessionHandler.HandleSession(w, r)
-	})
+	}))
 
 	// Device endpoints
-	mux.HandleFunc("/devices", func(w http.ResponseWriter, r *http.Request) {
-		enableCORS(w)
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-		deviceHandler.HandleDevices(w, r)
-	})
-
-	mux.HandleFunc("/devices/", func(w http.ResponseWriter, r *http.Request) {
-		enableCORS(w)
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-		deviceHandler.HandleDevice(w, r)
-	})
+	mux.HandleFunc("/devices", middleware.WithCORS(deviceHandler.HandleDevices))
+	mux.HandleFunc("/devices/", middleware.WithCORS(deviceHandler.HandleDevice))
 
 	// Admin endpoints
-	mux.HandleFunc("/admin/stats", func(w http.ResponseWriter, r *http.Request) {
-		enableCORS(w)
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-		adminHandler.HandleStats(w, r)
-	})
+	mux.HandleFunc("/admin/stats", middleware.WithCORS(adminHandler.HandleStats))
+	mux.HandleFunc("/admin/config", middleware.WithCORS(adminHandler.HandleConfig))
 
-	mux.HandleFunc("/admin/config", func(w http.ResponseWriter, r *http.Request) {
-		enableCORS(w)
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-		adminHandler.HandleConfig(w, r)
-	})
+	// Print sizes & QR code
+	mux.HandleFunc("/print-sizes", middleware.WithCORS(handler.HandlePrintSizes))
+	mux.HandleFunc("/qr", middleware.WithCORS(handler.GenerateQR))
 
-	// Print sizes
-	mux.HandleFunc("/print-sizes", func(w http.ResponseWriter, r *http.Request) {
-		enableCORS(w)
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-		handler.HandlePrintSizes(w, r)
-	})
-
-	// QR code
-	mux.HandleFunc("/qr", func(w http.ResponseWriter, r *http.Request) {
-		enableCORS(w)
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-		handler.GenerateQR(w, r)
-	})
-
-	// Metrics endpoint
+	// Metrics endpoint (CORS but no OPTIONS handling needed)
 	mux.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
-		enableCORS(w)
+		w.Header().Set("Access-Control-Allow-Origin", "*")
 		metrics.HandleMetrics(w, r)
 	})
 
@@ -267,24 +197,15 @@ func main() {
 	chain = metrics.Middleware(chain)
 	chain = rateLimiter.Middleware(chain)
 
-	if useMinIO {
-		logger.Info("FotoBoo API server starting",
-			"port", port,
-			"db_path", dbPath,
-			"web_dir", webDir,
-			"storage_type", "minio",
-			"minio_endpoint", minioEndpoint,
-			"minio_bucket", minioBucket,
-		)
-	} else {
-		logger.Info("FotoBoo API server starting",
-			"port", port,
-			"db_path", dbPath,
-			"web_dir", webDir,
-			"storage_type", "local",
-			"storage_path", storagePath,
-		)
-	}
+	logger.Info("startup",
+		"port", port,
+		"db_path", dbPath,
+		"web_dir", webDir,
+		"storage_type", storageType,
+		"storage_path", storagePath,
+		"minio_endpoint", minioEndpoint,
+		"minio_bucket", minioBucket,
+	)
 
 	// Graceful shutdown
 	go func() {
@@ -307,12 +228,6 @@ func getEnv(key, defaultValue string) string {
 		return strings.TrimSpace(value)
 	}
 	return defaultValue
-}
-
-func enableCORS(w http.ResponseWriter) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 }
 
 // spaHandler serves static files and falls back to index.html for SPA routes

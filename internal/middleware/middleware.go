@@ -131,6 +131,7 @@ type RateLimiter struct {
 	visitors map[string]*visitor
 	rate     int           // requests per window
 	window   time.Duration // time window
+	stopCh   chan struct{}
 }
 
 type visitor struct {
@@ -144,17 +145,31 @@ func NewRateLimiter(rate int, window time.Duration) *RateLimiter {
 		visitors: make(map[string]*visitor),
 		rate:     rate,
 		window:   window,
+		stopCh:   make(chan struct{}),
 	}
 
 	// Cleanup old entries every minute
-	go func() {
-		for {
-			time.Sleep(time.Minute)
-			rl.cleanup()
-		}
-	}()
+	go rl.runCleanup()
 
 	return rl
+}
+
+func (rl *RateLimiter) Stop() {
+	close(rl.stopCh)
+}
+
+func (rl *RateLimiter) runCleanup() {
+	ticker := time.NewTicker(time.Minute)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-rl.stopCh:
+			return
+		case <-ticker.C:
+			rl.cleanup()
+		}
+	}
 }
 
 func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
@@ -283,4 +298,21 @@ func NewStructuredLogger() *slog.Logger {
 	return slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	}))
+}
+
+// WithCORS wraps an http.HandlerFunc with CORS headers and OPTIONS preflight handling.
+// This eliminates repeated CORS boilerplate in route registration.
+func WithCORS(handler http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		handler(w, r)
+	}
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 func InitDB(dbPath string) (*sql.DB, error) {
@@ -73,4 +74,27 @@ func ensureDBDir(dbPath string) error {
 	}
 
 	return os.MkdirAll(dir, 0755)
+}
+
+// parseTime is a shared helper to parse RFC3339Nano timestamps stored in SQLite.
+// Returns zero time on parse failure so callers don't need to handle the error.
+func parseTime(s string) time.Time {
+	t, _ := time.Parse(time.RFC3339Nano, s)
+	return t
+}
+
+// countByDate is a shared helper for COUNT queries filtered by a calendar day.
+func countByDate(db *sql.DB, table string, date time.Time) (int, error) {
+	startOfDay := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.UTC).Format(time.RFC3339)
+	endOfDay := time.Date(date.Year(), date.Month(), date.Day(), 23, 59, 59, 999999999, time.UTC).Format(time.RFC3339)
+
+	var count int
+	err := db.QueryRow(
+		`SELECT COUNT(*) FROM `+table+` WHERE created_at >= ? AND created_at <= ?`,
+		startOfDay, endOfDay,
+	).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count %s by date: %w", table, err)
+	}
+	return count, nil
 }

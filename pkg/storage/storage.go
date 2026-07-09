@@ -29,7 +29,4 @@ type Storage interface {
 	Close() error
 }
 
-// Config holds common configuration for all storage backends
-type Config struct {
-	Type string // "local", "minio", "s3"
-}
+

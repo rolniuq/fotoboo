@@ -1,11 +1,11 @@
 package handler
 
 import (
-	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/fotoboo/fotoboo/internal/domain"
 	"github.com/fotoboo/fotoboo/internal/usecase"
@@ -33,7 +33,7 @@ type ErrorResponse struct {
 
 func (h *PhotoHandler) UploadPhoto(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		h.writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+		writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "method not allowed"})
 		return
 	}
 
@@ -41,7 +41,7 @@ func (h *PhotoHandler) UploadPhoto(w http.ResponseWriter, r *http.Request) {
 
 	data, err := io.ReadAll(r.Body)
 	if err != nil {
-		h.writeError(w, http.StatusBadRequest, "failed to read request body")
+		writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "failed to read request body"})
 		return
 	}
 
@@ -51,27 +51,25 @@ func (h *PhotoHandler) UploadPhoto(w http.ResponseWriter, r *http.Request) {
 	photo, err := h.useCase.UploadPhoto(sessionID, data)
 	if err != nil {
 		if errors.Is(err, domain.ErrInvalidPhoto) {
-			h.writeError(w, http.StatusBadRequest, "invalid photo data")
+			writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "invalid photo data"})
 			return
 		}
-		h.writeError(w, http.StatusInternalServerError, "failed to save photo")
+		writeJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "failed to save photo"})
 		return
 	}
 
 	response := UploadResponse{
 		ID:        photo.ID,
 		SessionID: photo.SessionID,
-		CreatedAt: photo.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		CreatedAt: photo.CreatedAt.Format(time.RFC3339),
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(response)
+	writeJSON(w, http.StatusCreated, response)
 }
 
 func (h *PhotoHandler) GetPhoto(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		h.writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+		writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "method not allowed"})
 		return
 	}
 
@@ -81,7 +79,7 @@ func (h *PhotoHandler) GetPhoto(w http.ResponseWriter, r *http.Request) {
 	id := parts[0]
 
 	if id == "" {
-		h.writeError(w, http.StatusBadRequest, "photo id is required")
+		writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "photo id is required"})
 		return
 	}
 
@@ -94,10 +92,10 @@ func (h *PhotoHandler) GetPhoto(w http.ResponseWriter, r *http.Request) {
 	photo, data, err := h.useCase.GetPhotoData(id)
 	if err != nil {
 		if errors.Is(err, domain.ErrPhotoNotFound) {
-			h.writeError(w, http.StatusNotFound, "photo not found")
+			writeJSON(w, http.StatusNotFound, ErrorResponse{Error: "photo not found"})
 			return
 		}
-		h.writeError(w, http.StatusInternalServerError, "failed to retrieve photo")
+		writeJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "failed to retrieve photo"})
 		return
 	}
 
@@ -109,47 +107,40 @@ func (h *PhotoHandler) GetPhoto(w http.ResponseWriter, r *http.Request) {
 
 func (h *PhotoHandler) ListPhotos(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		h.writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+		writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "method not allowed"})
 		return
 	}
 
 	photos, err := h.useCase.ListPhotos()
 	if err != nil {
-		h.writeError(w, http.StatusInternalServerError, "failed to list photos")
+		writeJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "failed to list photos"})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(photos)
+	writeJSON(w, http.StatusOK, photos)
 }
 
 func (h *PhotoHandler) DeletePhoto(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
-		h.writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+		writeJSON(w, http.StatusMethodNotAllowed, ErrorResponse{Error: "method not allowed"})
 		return
 	}
 
 	id := strings.TrimPrefix(r.URL.Path, "/photos/")
 	if id == "" {
-		h.writeError(w, http.StatusBadRequest, "photo id is required")
+		writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "photo id is required"})
 		return
 	}
 
 	err := h.useCase.DeletePhoto(id)
 	if err != nil {
 		if errors.Is(err, domain.ErrPhotoNotFound) {
-			h.writeError(w, http.StatusNotFound, "photo not found")
+			writeJSON(w, http.StatusNotFound, ErrorResponse{Error: "photo not found"})
 			return
 		}
-		h.writeError(w, http.StatusInternalServerError, "failed to delete photo")
+		writeJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "failed to delete photo"})
 		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-}
-
-func (h *PhotoHandler) writeError(w http.ResponseWriter, status int, message string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(ErrorResponse{Error: message})
 }

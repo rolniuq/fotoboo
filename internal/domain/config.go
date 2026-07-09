@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"encoding/json"
 	"sync"
 )
 
@@ -56,8 +55,4 @@ func (cs *ConfigStore) Update(cfg Config) {
 	cs.config = &cfg
 }
 
-func (cs *ConfigStore) MarshalJSON() ([]byte, error) {
-	cs.mu.RLock()
-	defer cs.mu.RUnlock()
-	return json.Marshal(cs.config)
-}
+

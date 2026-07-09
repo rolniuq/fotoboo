@@ -127,15 +127,7 @@ func (r *PhotoRepository) CountAll() (int, error) {
 }
 
 func (r *PhotoRepository) CountByDate(date time.Time) (int, error) {
-	startOfDay := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.UTC).Format(time.RFC3339)
-	endOfDay := time.Date(date.Year(), date.Month(), date.Day(), 23, 59, 59, 999999999, time.UTC).Format(time.RFC3339)
-
-	var count int
-	err := r.db.QueryRow(`SELECT COUNT(*) FROM photos WHERE created_at >= ? AND created_at <= ?`, startOfDay, endOfDay).Scan(&count)
-	if err != nil {
-		return 0, fmt.Errorf("failed to count photos by date: %w", err)
-	}
-	return count, nil
+	return countByDate(r.db, "photos", date)
 }
 
 func (r *PhotoRepository) TotalStorageBytes() (int64, error) {
@@ -159,7 +151,7 @@ func (r *PhotoRepository) scanPhoto(row *sql.Row) (*domain.Photo, error) {
 		return nil, fmt.Errorf("failed to scan photo: %w", err)
 	}
 
-	photo.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
+	photo.CreatedAt = parseTime(createdAt)
 	return &photo, nil
 }
 
@@ -174,7 +166,7 @@ func (r *PhotoRepository) scanPhotos(rows *sql.Rows) ([]*domain.Photo, error) {
 			return nil, fmt.Errorf("failed to scan photo row: %w", err)
 		}
 
-		photo.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
+		photo.CreatedAt = parseTime(createdAt)
 		photos = append(photos, &photo)
 	}
 

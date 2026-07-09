@@ -92,8 +92,8 @@ func (r *SQLiteDeviceRepository) scanDevice(row *sql.Row) (*domain.Device, error
 		return nil, fmt.Errorf("failed to scan device: %w", err)
 	}
 
-	device.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
-	device.UpdatedAt, _ = time.Parse(time.RFC3339Nano, updatedAt)
+	device.CreatedAt = parseTime(createdAt)
+	device.UpdatedAt = parseTime(updatedAt)
 
 	return &device, nil
 }
@@ -109,8 +109,8 @@ func (r *SQLiteDeviceRepository) scanDevices(rows *sql.Rows) ([]*domain.Device, 
 			return nil, fmt.Errorf("failed to scan device row: %w", err)
 		}
 
-		device.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
-		device.UpdatedAt, _ = time.Parse(time.RFC3339Nano, updatedAt)
+		device.CreatedAt = parseTime(createdAt)
+		device.UpdatedAt = parseTime(updatedAt)
 		devices = append(devices, &device)
 	}
 

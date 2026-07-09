@@ -72,18 +72,7 @@ func (r *SQLiteSessionRepository) CountAll() (int, error) {
 }
 
 func (r *SQLiteSessionRepository) CountByDate(date time.Time) (int, error) {
-	startOfDay := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.UTC).Format(time.RFC3339)
-	endOfDay := time.Date(date.Year(), date.Month(), date.Day(), 23, 59, 59, 999999999, time.UTC).Format(time.RFC3339)
-
-	var count int
-	err := r.db.QueryRow(
-		`SELECT COUNT(*) FROM sessions WHERE created_at >= ? AND created_at <= ?`,
-		startOfDay, endOfDay,
-	).Scan(&count)
-	if err != nil {
-		return 0, fmt.Errorf("failed to count sessions by date: %w", err)
-	}
-	return count, nil
+	return countByDate(r.db, "sessions", date)
 }
 
 func (r *SQLiteSessionRepository) scanSession(row *sql.Row) (*domain.Session, error) {
@@ -99,8 +88,8 @@ func (r *SQLiteSessionRepository) scanSession(row *sql.Row) (*domain.Session, er
 	}
 
 	session.Status = domain.SessionStatus(status)
-	session.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
-	session.UpdatedAt, _ = time.Parse(time.RFC3339Nano, updatedAt)
+	session.CreatedAt = parseTime(createdAt)
+	session.UpdatedAt = parseTime(updatedAt)
 
 	return &session, nil
 }
@@ -117,8 +106,8 @@ func (r *SQLiteSessionRepository) scanSessions(rows *sql.Rows) ([]*domain.Sessio
 		}
 
 		session.Status = domain.SessionStatus(status)
-		session.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
-		session.UpdatedAt, _ = time.Parse(time.RFC3339Nano, updatedAt)
+		session.CreatedAt = parseTime(createdAt)
+		session.UpdatedAt = parseTime(updatedAt)
 		sessions = append(sessions, &session)
 	}
 
