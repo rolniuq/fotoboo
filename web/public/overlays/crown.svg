@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160">
+  <defs>
+    <linearGradient id="crownGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFE55C"/>
+      <stop offset="40%" stop-color="#FFD700"/>
+      <stop offset="100%" stop-color="#B8860B"/>
+    </linearGradient>
+  </defs>
+  <!-- Crown points -->
+  <polygon points="5,150 15,40 45,85 100,10 155,85 185,40 195,150" 
+           fill="url(#crownGrad)" stroke="#8B6914" stroke-width="2" stroke-linejoin="round"/>
+  <!-- Crown band -->
+  <rect x="5" y="115" width="190" height="38" rx="4" fill="#DAA520" stroke="#8B6914" stroke-width="2"/>
+  <!-- Jewels on top points -->
+  <circle cx="100" cy="20" r="8" fill="#FF2D55"/>
+  <circle cx="100" cy="20" r="4" fill="#FF6B8A"/>
+  <circle cx="50" cy="85" r="6" fill="#007AFF"/>
+  <circle cx="50" cy="85" r="3" fill="#5AC8FA"/>
+  <circle cx="150" cy="85" r="6" fill="#34C759"/>
+  <circle cx="150" cy="85" r="3" fill="#76D672"/>
+  <!-- Jewels on band -->
+  <circle cx="30" cy="134" r="5" fill="#FF2D55"/>
+  <circle cx="100" cy="134" r="6" fill="#5856D6"/>
+  <circle cx="170" cy="134" r="5" fill="#007AFF"/>
+  <!-- Pearl trim -->
+  <circle cx="20" cy="134" r="2.5" fill="#FFF8DC"/>
+  <circle cx="50" cy="134" r="2.5" fill="#FFF8DC"/>
+  <circle cx="75" cy="134" r="2.5" fill="#FFF8DC"/>
+  <circle cx="125" cy="134" r="2.5" fill="#FFF8DC"/>
+  <circle cx="150" cy="134" r="2.5" fill="#FFF8DC"/>
+  <circle cx="180" cy="134" r="2.5" fill="#FFF8DC"/>
+</svg>

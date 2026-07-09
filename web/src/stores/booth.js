@@ -6,7 +6,9 @@ export const useBoothStore = defineStore('booth', () => {
   // State
   const sessionId = ref(null)
   const photoId = ref(null)
-  const capturedPhoto = ref(null) // base64 data URL
+  const capturedPhoto = ref(null) // base64 data URL (with face overlay baked in, if any)
+  const rawCapturedPhoto = ref(null) // base64 data URL (without face overlay, for re-rendering)
+  const overlayKey = ref('none')    // Currently selected face overlay
   const isSaving = ref(false)
   const error = ref(null)
 
@@ -26,6 +28,14 @@ export const useBoothStore = defineStore('booth', () => {
 
   function setCapturedPhoto(dataUrl) {
     capturedPhoto.value = dataUrl
+  }
+
+  function setRawCapturedPhoto(dataUrl) {
+    rawCapturedPhoto.value = dataUrl
+  }
+
+  function setOverlayKey(key) {
+    overlayKey.value = key
   }
 
   async function savePhoto(blob) {
@@ -57,6 +67,8 @@ export const useBoothStore = defineStore('booth', () => {
     sessionId.value = null
     photoId.value = null
     capturedPhoto.value = null
+    rawCapturedPhoto.value = null
+    overlayKey.value = 'none'
     isSaving.value = false
     error.value = null
   }
@@ -65,10 +77,14 @@ export const useBoothStore = defineStore('booth', () => {
     sessionId,
     photoId,
     capturedPhoto,
+    rawCapturedPhoto,
+    overlayKey,
     isSaving,
     error,
     createSession,
     setCapturedPhoto,
+    setRawCapturedPhoto,
+    setOverlayKey,
     savePhoto,
     reset,
   }

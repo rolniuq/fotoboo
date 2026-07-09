@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="catOuter" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#E8A0B0"/>
+      <stop offset="100%" stop-color="#FF8DA1"/>
+    </linearGradient>
+    <linearGradient id="catInner" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#FFB3C1"/>
+      <stop offset="100%" stop-color="#FFD6DF"/>
+    </linearGradient>
+  </defs>
+  <!-- Left ear -->
+  <polygon points="5,140 50,5 95,95" fill="url(#catOuter)" stroke="#D0607A" stroke-width="2"/>
+  <polygon points="30,115 50,25 72,90" fill="url(#catInner)"/>
+  <!-- Right ear -->
+  <polygon points="105,95 150,5 195,140" fill="url(#catOuter)" stroke="#D0607A" stroke-width="2"/>
+  <polygon points="128,90 150,25 170,115" fill="url(#catInner)"/>
+</svg>

@@ -58,6 +58,24 @@
       </div>
     </div>
 
+    <!-- Face Effects (re-render from raw photo when changed) -->
+    <div class="control-card">
+      <h3>
+        Face Effects
+        <span v-if="faceFilters.isDetecting.value" class="badge-detecting">Detecting...</span>
+      </h3>
+      <div class="pill-group">
+        <button
+          v-for="key in faceFilters.overlayKeys.value"
+          :key="key"
+          :class="['pill', 'pill-overlay', { active: faceFilters.currentOverlay.value === key }]"
+          @click="selectOverlay(key)"
+        >
+          {{ faceFilters.overlays[key].label }}
+        </button>
+      </div>
+    </div>
+
     <div class="controls">
       <button class="btn btn-secondary" @click="$router.push({ name: 'capture' })">
         Retake
@@ -78,10 +96,12 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useBoothStore } from '../../stores/booth'
 import { useFilters } from '../../composables/useFilters'
+import { useFaceFilters } from '../../composables/useFaceFilters'
 
 const router = useRouter()
 const booth = useBoothStore()
 const filters = useFilters()
+const faceFilters = useFaceFilters()
 const canvasRef = ref(null)
 
 const frameOverlayClass = computed(() => {
@@ -94,18 +114,93 @@ onMounted(() => {
     router.push({ name: 'capture' })
     return
   }
+
+  // Restore overlay selection from capture
+  faceFilters.currentOverlay.value = booth.overlayKey || 'none'
+
+  // If an overlay is active, detect face for proper placement
+  // Use raw photo if available (clean slate), otherwise use the captured photo
+  if (faceFilters.currentOverlay.value !== 'none') {
+    const detectSource = booth.rawCapturedPhoto || booth.capturedPhoto
+    if (detectSource) faceFilters.detectFace(detectSource)
+  }
+
   renderPreview()
 })
 
+/**
+ * Select a face overlay and re-render from the raw photo.
+ */
+async function selectOverlay(key) {
+  faceFilters.currentOverlay.value = key
+  booth.setOverlayKey(key)
+
+  // If an overlay is selected and we haven't detected face yet, do it now
+  if (key !== 'none' && !faceFilters.faceBounds.value) {
+    const detectSource = booth.rawCapturedPhoto || booth.capturedPhoto
+    if (detectSource) await faceFilters.detectFace(detectSource)
+  }
+
+  renderPreview()
+}
+
+/**
+ * Render the preview with CSS filters + face overlay (from raw photo).
+ *
+ * Pipeline:
+ *   1. Load source image (rawCapturedPhoto if overlay exists, else capturedPhoto)
+ *   2. Apply CSS filter via offscreen canvas
+ *   3. Draw face overlay on top (if selected)
+ */
 async function renderPreview() {
-  if (!canvasRef.value || !booth.capturedPhoto) return
-  await filters.applyToCanvas(canvasRef.value, booth.capturedPhoto)
+  if (!canvasRef.value) return
+
+  const canvas = canvasRef.value
+  const ctx = canvas.getContext('2d')
+
+  // Use raw photo if available (clean slate for overlay-free or re-render)
+  // Falls back to capturedPhoto for backward compatibility
+  const sourceImage = booth.rawCapturedPhoto || booth.capturedPhoto
+
+  if (!sourceImage) return
+
+  const img = new Image()
+  img.src = sourceImage
+
+  return new Promise((resolve) => {
+    img.onload = async () => {
+      canvas.width = img.width
+      canvas.height = img.height
+
+      // Step 1: Apply CSS filter via offscreen canvas
+      const offscreen = document.createElement('canvas')
+      offscreen.width = img.width
+      offscreen.height = img.height
+      const offCtx = offscreen.getContext('2d')
+      offCtx.filter = filters.filterString.value
+      offCtx.drawImage(img, 0, 0)
+
+      // Step 2: Draw filtered result onto main canvas
+      ctx.drawImage(offscreen, 0, 0)
+
+      // Step 3: Apply face overlay on top (crisp, unfiltered)
+      if (faceFilters.currentOverlay.value !== 'none' && faceFilters.faceBounds.value) {
+        await faceFilters.applyOverlay(
+          canvas,
+          faceFilters.currentOverlay.value,
+          faceFilters.faceBounds.value,
+        )
+      }
+
+      resolve()
+    }
+  })
 }
 
 async function handleSave() {
   if (!canvasRef.value) return
 
-  // Ensure latest filters applied
+  // Ensure latest filters + overlay are applied
   await renderPreview()
 
   const blob = await filters.getCanvasBlob(canvasRef.value)
@@ -260,6 +355,23 @@ async function handleSave() {
 
 .slider-group input[type='range'] {
   width: 100%;
+}
+
+/* Detecting badge */
+.badge-detecting {
+  font-size: 0.7rem;
+  background: var(--color-accent);
+  color: white;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-lg);
+  margin-left: 0.5rem;
+  vertical-align: middle;
+  animation: pulse 1s ease infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 @media (max-width: 768px) {

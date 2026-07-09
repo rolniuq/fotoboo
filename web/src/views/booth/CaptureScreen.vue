@@ -3,6 +3,9 @@
     <div class="camera-container">
       <video ref="videoRef" autoplay playsinline class="camera-video"></video>
 
+      <!-- Face Overlay Canvas (transparent, on top of video) -->
+      <canvas ref="overlayCanvasRef" class="overlay-canvas"></canvas>
+
       <!-- Countdown Overlay -->
       <Transition name="pulse">
         <div v-if="countdown.isRunning.value" class="countdown-overlay">
@@ -12,6 +15,19 @@
 
       <!-- Flash -->
       <div :class="['flash-overlay', { active: showFlash }]"></div>
+    </div>
+
+    <!-- Face Effect Selector (TikTok-style pill tray) -->
+    <div class="face-effect-tray">
+      <button
+        v-for="key in faceFilters.overlayKeys.value"
+        :key="key"
+        :class="['effect-pill', { active: faceFilters.currentOverlay.value === key }]"
+        @click="selectEffect(key)"
+        :disabled="countdown.isRunning.value"
+      >
+        {{ faceFilters.overlays[key].label }}
+      </button>
     </div>
 
     <div class="controls">
@@ -36,35 +52,64 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCamera } from '../../composables/useCamera'
 import { useCountdown } from '../../composables/useCountdown'
+import { useFaceFilters } from '../../composables/useFaceFilters'
 import { useBoothStore } from '../../stores/booth'
 
 const router = useRouter()
 const booth = useBoothStore()
 const camera = useCamera()
 const countdown = useCountdown(3)
+const faceFilters = useFaceFilters()
 const showFlash = ref(false)
 
-// Bind the video ref from composable
+// Bind refs
 const videoRef = camera.videoRef
+const overlayCanvasRef = ref(null)
 
-onMounted(() => {
-  camera.start()
+onMounted(async () => {
+  // Restore previously selected overlay (if coming from Preview "Retake")
+  const prevOverlay = booth.overlayKey
+  if (prevOverlay && prevOverlay !== 'none') {
+    await faceFilters.selectOverlay(prevOverlay)
+  }
+
+  await camera.start()
+
+  // Start real-time face overlay after camera is ready
+  if (overlayCanvasRef.value) {
+    faceFilters.startVideoOverlay(videoRef.value, overlayCanvasRef.value)
+  }
 })
 
 onUnmounted(() => {
+  faceFilters.stopVideoOverlay()
   camera.stop()
 })
+
+async function selectEffect(key) {
+  await faceFilters.selectOverlay(key)
+  booth.setOverlayKey(key)
+}
 
 async function handleCapture() {
   await countdown.start()
 
+  // Capture raw frame (without overlay) for possible re-render
+  const rawDataUrl = faceFilters.captureRawVideoFrame(videoRef.value)
+
+  // Capture final frame with overlay baked in
+  const finalDataUrl = faceFilters.captureVideoFrame(videoRef.value)
+
+  if (finalDataUrl && rawDataUrl) {
+    booth.setRawCapturedPhoto(rawDataUrl)
+    booth.setCapturedPhoto(finalDataUrl)
+  } else if (finalDataUrl) {
+    // Fallback: just use the overlay frame
+    booth.setCapturedPhoto(finalDataUrl)
+  }
+
   // Flash
   showFlash.value = true
-
-  const dataUrl = camera.captureFrame()
-  if (dataUrl) {
-    booth.setCapturedPhoto(dataUrl)
-  }
 
   setTimeout(() => {
     showFlash.value = false
@@ -88,7 +133,7 @@ async function handleCapture() {
   width: 640px;
   max-width: 90vw;
   height: 480px;
-  max-height: 60vh;
+  max-height: 55vh;
   background: #000;
   border-radius: var(--radius-md);
   overflow: hidden;
@@ -99,6 +144,17 @@ async function handleCapture() {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* Transparent canvas overlay on top of video for face effects */
+.overlay-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 5;
+  pointer-events: none;
 }
 
 .countdown-overlay {
@@ -128,6 +184,49 @@ async function handleCapture() {
 
 .flash-overlay.active {
   animation: flash-effect 0.3s ease-out;
+}
+
+/* Face effect pill tray */
+.face-effect-tray {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 0.6rem 1rem;
+  margin-top: 0.5rem;
+  max-width: 90vw;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(8px);
+}
+
+.effect-pill {
+  padding: 0.35rem 0.85rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.effect-pill.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
+
+.effect-pill:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.6);
+  transform: translateY(-1px);
+}
+
+.effect-pill:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .btn-capture {

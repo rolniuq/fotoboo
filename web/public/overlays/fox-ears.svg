@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="foxOuter" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#D4601A"/>
+      <stop offset="100%" stop-color="#F07A2E"/>
+    </linearGradient>
+    <linearGradient id="foxInner" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#FFB56B"/>
+      <stop offset="100%" stop-color="#FFD09E"/>
+    </linearGradient>
+  </defs>
+  <!-- Left ear -->
+  <polygon points="5,140 50,5 90,95" fill="url(#foxOuter)" stroke="#B04E10" stroke-width="2"/>
+  <polygon points="25,110 50,25 75,85" fill="url(#foxInner)"/>
+  <!-- Left ear tuft -->
+  <polygon points="45,5 50,0 55,10 50,15" fill="#FFF8DC"/>
+  <!-- Right ear -->
+  <polygon points="110,95 150,5 195,140" fill="url(#foxOuter)" stroke="#B04E10" stroke-width="2"/>
+  <polygon points="125,85 150,25 175,110" fill="url(#foxInner)"/>
+  <!-- Right ear tuft -->
+  <polygon points="145,5 150,0 155,10 150,15" fill="#FFF8DC"/>
+</svg>

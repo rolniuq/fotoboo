@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">
+  <!-- Left lens -->
+  <circle cx="55" cy="50" r="38" fill="rgba(200, 230, 255, 0.15)" stroke="#2C2C2C" stroke-width="5"/>
+  <circle cx="55" cy="50" r="38" fill="none" stroke="#1A1A1A" stroke-width="3"/>
+  <!-- Right lens -->
+  <circle cx="145" cy="50" r="38" fill="rgba(200, 230, 255, 0.15)" stroke="#2C2C2C" stroke-width="5"/>
+  <circle cx="145" cy="50" r="38" fill="none" stroke="#1A1A1A" stroke-width="3"/>
+  <!-- Bridge -->
+  <path d="M93,50 Q100,40 107,50" fill="none" stroke="#1A1A1A" stroke-width="4"/>
+  <!-- Left arm -->
+  <line x1="0" y1="45" x2="17" y2="48" stroke="#1A1A1A" stroke-width="4" stroke-linecap="round"/>
+  <!-- Right arm -->
+  <line x1="183" y1="45" x2="200" y2="48" stroke="#1A1A1A" stroke-width="4" stroke-linecap="round"/>
+  <!-- Shine -->
+  <ellipse cx="40" cy="38" rx="12" ry="6" fill="rgba(255,255,255,0.12)" transform="rotate(-20, 40, 38)"/>
+  <ellipse cx="130" cy="38" rx="12" ry="6" fill="rgba(255,255,255,0.12)" transform="rotate(-20, 130, 38)"/>
+</svg>

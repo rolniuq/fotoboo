@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="dogOuter" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#A0722B"/>
+      <stop offset="100%" stop-color="#6B4C1A"/>
+    </linearGradient>
+    <linearGradient id="dogInner" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#D4A259"/>
+      <stop offset="100%" stop-color="#8B6914"/>
+    </linearGradient>
+  </defs>
+  <!-- Left ear -->
+  <g transform="translate(40, 100) rotate(-15)">
+    <ellipse cx="0" cy="-40" rx="30" ry="55" fill="url(#dogOuter)"/>
+    <ellipse cx="0" cy="-35" rx="18" ry="35" fill="url(#dogInner)"/>
+  </g>
+  <!-- Right ear -->
+  <g transform="translate(160, 100) rotate(15)">
+    <ellipse cx="0" cy="-40" rx="30" ry="55" fill="url(#dogOuter)"/>
+    <ellipse cx="0" cy="-35" rx="18" ry="35" fill="url(#dogInner)"/>
+  </g>
+</svg>
