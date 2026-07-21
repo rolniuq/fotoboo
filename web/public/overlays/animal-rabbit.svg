@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="rabbitFur" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#E8E0D0" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#D0C8B8" stop-opacity="0.2"/>
+    </radialGradient>
+    <linearGradient id="rabbitEarOuter" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#D0C8B8"/>
+      <stop offset="100%" stop-color="#E8E0D0"/>
+    </linearGradient>
+    <linearGradient id="rabbitEarInner" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#FFB3C1"/>
+      <stop offset="100%" stop-color="#FFD6DF"/>
+    </linearGradient>
+  </defs>
+  <!-- Face fur base -->
+  <ellipse cx="100" cy="130" rx="65" ry="55" fill="url(#rabbitFur)"/>
+  <!-- Left ear -->
+  <ellipse cx="55" cy="15" rx="18" ry="50" fill="url(#rabbitEarOuter)" stroke="#B0A898" stroke-width="1"/>
+  <ellipse cx="55" cy="15" rx="10" ry="38" fill="url(#rabbitEarInner)"/>
+  <!-- Right ear -->
+  <ellipse cx="145" cy="15" rx="18" ry="50" fill="url(#rabbitEarOuter)" stroke="#B0A898" stroke-width="1"/>
+  <ellipse cx="145" cy="15" rx="10" ry="38" fill="url(#rabbitEarInner)"/>
+  <!-- Nose -->
+  <ellipse cx="100" cy="120" rx="5" ry="3.5" fill="#FF8DA1"/>
+  <!-- Mouth -->
+  <path d="M95,124 Q100,128 100,124 Q100,128 105,124" fill="none" stroke="#D0607A" stroke-width="1"/>
+  <!-- Whiskers -->
+  <line x1="100" y1="122" x2="25" y2="114" stroke="#CCC" stroke-width="0.8"/>
+  <line x1="100" y1="125" x2="20" y2="126" stroke="#CCC" stroke-width="0.8"/>
+  <line x1="100" y1="122" x2="175" y2="114" stroke="#CCC" stroke-width="0.8"/>
+  <line x1="100" y1="125" x2="180" y2="126" stroke="#CCC" stroke-width="0.8"/>
+  <!-- Buck teeth -->
+  <rect x="95" y="127" width="4" height="5" rx="1" fill="white" stroke="#DDD" stroke-width="0.5"/>
+  <rect x="101" y="127" width="4" height="5" rx="1" fill="white" stroke="#DDD" stroke-width="0.5"/>
+</svg>

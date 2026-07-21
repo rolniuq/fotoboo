@@ -6,6 +6,7 @@ import CaptureScreen from '../views/booth/CaptureScreen.vue'
 import CollageScreen from '../views/booth/CollageScreen.vue'
 import PreviewScreen from '../views/booth/PreviewScreen.vue'
 import ResultScreen from '../views/booth/ResultScreen.vue'
+import AnimalScreen from '../views/booth/AnimalScreen.vue'
 
 import AdminLayout from '../views/admin/AdminLayout.vue'
 import AdminDashboard from '../views/admin/AdminDashboard.vue'
@@ -24,6 +25,7 @@ const routes = [
       { path: 'collage', name: 'collage', component: CollageScreen },
       { path: 'preview', name: 'preview', component: PreviewScreen },
       { path: 'result', name: 'result', component: ResultScreen },
+      { path: 'animal', name: 'animal', component: AnimalScreen },
     ],
   },
   {

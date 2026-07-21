@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="catFur" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#C0A0A0" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#A08080" stop-opacity="0.3"/>
+    </linearGradient>
+    <linearGradient id="catEarOuter" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#E8A0B0"/>
+      <stop offset="100%" stop-color="#FF8DA1"/>
+    </linearGradient>
+    <linearGradient id="catEarInner" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#FFB3C1"/>
+      <stop offset="100%" stop-color="#FFD6DF"/>
+    </linearGradient>
+  </defs>
+  <!-- Face fur base -->
+  <ellipse cx="100" cy="120" rx="75" ry="65" fill="url(#catFur)"/>
+  <!-- Left ear -->
+  <polygon points="20,130 50,10 85,90" fill="url(#catEarOuter)" stroke="#D0607A" stroke-width="1.5"/>
+  <polygon points="38,105 52,25 72,80" fill="url(#catEarInner)"/>
+  <!-- Right ear -->
+  <polygon points="115,90 150,10 180,130" fill="url(#catEarOuter)" stroke="#D0607A" stroke-width="1.5"/>
+  <polygon points="128,80 148,25 162,105" fill="url(#catEarInner)"/>
+  <!-- Whiskers left -->
+  <line x1="100" y1="125" x2="10" y2="110" stroke="#888" stroke-width="1" opacity="0.7"/>
+  <line x1="100" y1="130" x2="5" y2="130" stroke="#888" stroke-width="1" opacity="0.7"/>
+  <line x1="100" y1="135" x2="10" y2="148" stroke="#888" stroke-width="1" opacity="0.7"/>
+  <!-- Whiskers right -->
+  <line x1="100" y1="125" x2="190" y2="110" stroke="#888" stroke-width="1" opacity="0.7"/>
+  <line x1="100" y1="130" x2="195" y2="130" stroke="#888" stroke-width="1" opacity="0.7"/>
+  <line x1="100" y1="135" x2="190" y2="148" stroke="#888" stroke-width="1" opacity="0.7"/>
+  <!-- Nose -->
+  <ellipse cx="100" cy="120" rx="6" ry="4" fill="#FF8DA1"/>
+  <!-- Mouth -->
+  <path d="M94,124 Q100,130 100,124 Q100,130 106,124" fill="none" stroke="#D0607A" stroke-width="1.2"/>
+  <!-- Stripes on forehead -->
+  <path d="M85,65 L100,80 L115,65" fill="none" stroke="#B08080" stroke-width="2" opacity="0.5"/>
+  <path d="M78,75 L100,90 L122,75" fill="none" stroke="#B08080" stroke-width="1.5" opacity="0.4"/>
+</svg>

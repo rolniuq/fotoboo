@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="mane" cx="50%" cy="50%" r="50%">
+      <stop offset="50%" stop-color="#C87830" stop-opacity="0"/>
+      <stop offset="70%" stop-color="#D09030" stop-opacity="0.4"/>
+      <stop offset="90%" stop-color="#B06820" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#A05818" stop-opacity="0.6"/>
+    </radialGradient>
+    <radialGradient id="maneOuter" cx="50%" cy="50%" r="50%">
+      <stop offset="65%" stop-color="#A05818" stop-opacity="0"/>
+      <stop offset="85%" stop-color="#D09030" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#E8A840" stop-opacity="0.5"/>
+    </radialGradient>
+    <linearGradient id="lionEar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#D09030"/>
+      <stop offset="100%" stop-color="#A05818"/>
+    </linearGradient>
+  </defs>
+  <!-- Outer mane -->
+  <circle cx="100" cy="110" r="95" fill="url(#maneOuter)"/>
+  <!-- Inner mane -->
+  <circle cx="100" cy="110" r="80" fill="url(#mane)"/>
+  <!-- Mane tufts -->
+  <g fill="#C87830" opacity="0.4">
+    <path d="M10,50 Q25,40 30,55 Q20,55 10,50"/>
+    <path d="M20,30 Q35,20 40,35 Q30,35 20,30"/>
+    <path d="M170,20 Q185,15 180,35 Q170,30 170,20"/>
+    <path d="M185,45 Q195,55 180,60 Q182,50 185,45"/>
+    <path d="M30,160 Q45,170 35,180 Q25,175 30,160"/>
+    <path d="M170,155 Q185,165 175,178 Q165,170 170,155"/>
+    <path d="M80,10 Q95,0 100,12 Q88,14 80,10"/>
+    <path d="M120,8 Q130,0 135,14 Q122,14 120,8"/>
+  </g>
+  <!-- Left ear -->
+  <ellipse cx="38" cy="75" rx="18" ry="15" fill="url(#lionEar)"/>
+  <ellipse cx="38" cy="75" rx="10" ry="8" fill="#D4A080"/>
+  <!-- Right ear -->
+  <ellipse cx="162" cy="75" rx="18" ry="15" fill="url(#lionEar)"/>
+  <ellipse cx="162" cy="75" rx="10" ry="8" fill="#D4A080"/>
+  <!-- Nose -->
+  <ellipse cx="100" cy="118" rx="10" ry="7" fill="#8B5E3C"/>
+  <ellipse cx="100" cy="116" rx="5" ry="3" fill="#A07050"/>
+  <!-- Mouth -->
+  <path d="M88,125 Q100,135 112,125" fill="none" stroke="#6B3A1A" stroke-width="1.5"/>
+  <!-- Chin tuft -->
+  <path d="M92,138 Q100,148 108,138" fill="none" stroke="#C87830" stroke-width="2" opacity="0.5"/>
+</svg>

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="bearFur" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#8B5E3C" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#6B3A1A" stop-opacity="0.3"/>
+    </radialGradient>
+    <radialGradient id="bearEar" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#A07040"/>
+      <stop offset="100%" stop-color="#6B3A1A"/>
+    </radialGradient>
+    <radialGradient id="bearEarInner" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#D4A080"/>
+      <stop offset="100%" stop-color="#B08060"/>
+    </radialGradient>
+  </defs>
+  <!-- Face fur base -->
+  <ellipse cx="100" cy="120" rx="85" ry="70" fill="url(#bearFur)"/>
+  <!-- Left ear -->
+  <circle cx="28" cy="55" r="32" fill="url(#bearEar)" stroke="#5A2A0A" stroke-width="1.5"/>
+  <circle cx="28" cy="55" r="18" fill="url(#bearEarInner)"/>
+  <!-- Right ear -->
+  <circle cx="172" cy="55" r="32" fill="url(#bearEar)" stroke="#5A2A0A" stroke-width="1.5"/>
+  <circle cx="172" cy="55" r="18" fill="url(#bearEarInner)"/>
+  <!-- Nose -->
+  <ellipse cx="100" cy="118" rx="10" ry="7" fill="#3D2B1F"/>
+  <ellipse cx="100" cy="116" rx="4" ry="2.5" fill="#5C4033"/>
+  <!-- Mouth -->
+  <path d="M92,125 Q100,132 108,125" fill="none" stroke="#5A2A0A" stroke-width="1.2"/>
+</svg>

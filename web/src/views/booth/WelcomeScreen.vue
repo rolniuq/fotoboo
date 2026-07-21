@@ -10,6 +10,9 @@
       <button class="btn btn-secondary btn-start" @click="handleStart('collage')">
         Photo Collage
       </button>
+      <button class="btn btn-animal btn-start" @click="handleStart('animal')">
+        Animal Transform
+      </button>
     </div>
   </div>
 </template>
@@ -31,6 +34,8 @@ async function handleStart(mode) {
   
   if (mode === 'collage') {
     router.push({ name: 'collage' })
+  } else if (mode === 'animal') {
+    router.push({ name: 'animal' })
   } else {
     router.push({ name: 'capture' })
   }
@@ -71,6 +76,16 @@ async function handleStart(mode) {
 .btn-start {
   font-size: 1.3rem;
   padding: 1.2rem 3rem;
+}
+
+.btn-animal {
+  background: linear-gradient(135deg, #FF8DA1, #FF6B35);
+  color: var(--color-white);
+}
+
+.btn-animal:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
 
 @media (max-width: 768px) {
